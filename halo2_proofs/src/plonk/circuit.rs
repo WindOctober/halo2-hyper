@@ -27,10 +27,11 @@ pub trait ColumnType:
 }
 
 /// A column with an index and type
+#[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct Column<C: ColumnType> {
-    index: usize,
-    column_type: C,
+    pub index: usize,
+    pub column_type: C,
 }
 
 impl<C: ColumnType> Column<C> {
@@ -93,12 +94,14 @@ impl<C: ColumnType> PartialOrd for Column<C> {
     }
 }
 
-pub(crate) mod sealed {
+/// Only for transformation.
+pub mod sealed {
     /// Phase of advice column
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     pub struct Phase(pub(super) u8);
 
     impl Phase {
+        /// Only for transformation.
         pub fn prev(&self) -> Option<Phase> {
             self.0.checked_sub(1).map(Phase)
         }
@@ -112,6 +115,7 @@ pub(crate) mod sealed {
 
     /// Sealed trait to help keep `Phase` private.
     pub trait SealedPhase {
+        /// Only for transformation.
         fn to_sealed(self) -> Phase;
     }
 }
@@ -452,7 +456,7 @@ impl TryFrom<Column<Any>> for Column<Instance> {
 /// }
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct Selector(pub(crate) usize, bool);
+pub struct Selector(pub usize, pub bool);
 
 impl Selector {
     /// Enable this selector at the given offset within the given region.
@@ -481,11 +485,11 @@ impl Selector {
 #[derive(Copy, Clone, Debug)]
 pub struct FixedQuery {
     /// Query index
-    pub(crate) index: Option<usize>,
+    pub index: Option<usize>,
     /// Column index
-    pub(crate) column_index: usize,
+    pub column_index: usize,
     /// Rotation of this query
-    pub(crate) rotation: Rotation,
+    pub rotation: Rotation,
 }
 
 impl FixedQuery {
@@ -504,13 +508,13 @@ impl FixedQuery {
 #[derive(Copy, Clone, Debug)]
 pub struct AdviceQuery {
     /// Query index
-    pub(crate) index: Option<usize>,
+    pub index: Option<usize>,
     /// Column index
-    pub(crate) column_index: usize,
+    pub column_index: usize,
     /// Rotation of this query
-    pub(crate) rotation: Rotation,
+    pub rotation: Rotation,
     /// Phase of this advice column
-    pub(crate) phase: sealed::Phase,
+    pub phase: sealed::Phase,
 }
 
 impl AdviceQuery {
@@ -534,11 +538,11 @@ impl AdviceQuery {
 #[derive(Copy, Clone, Debug)]
 pub struct InstanceQuery {
     /// Query index
-    pub(crate) index: Option<usize>,
+    pub index: Option<usize>,
     /// Column index
-    pub(crate) column_index: usize,
+    pub column_index: usize,
     /// Rotation of this query
-    pub(crate) rotation: Rotation,
+    pub rotation: Rotation,
 }
 
 impl InstanceQuery {
@@ -1351,15 +1355,17 @@ impl<F: Field> Mul<F> for Expression<F> {
 
 /// Represents an index into a vector where each entry corresponds to a distinct
 /// point that polynomials are queried at.
+#[allow(dead_code)]
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct PointIndex(pub usize);
 
 /// A "virtual cell" is a PLONK cell that has been queried at a particular relative offset
 /// within a custom gate.
 #[derive(Clone, Debug)]
+#[allow(missing_docs)]
 pub struct VirtualCell {
-    pub(crate) column: Column<Any>,
-    pub(crate) rotation: Rotation,
+    pub column: Column<Any>,
+    pub rotation: Rotation,
 }
 
 impl<Col: Into<Column<Any>>> From<(Col, Rotation)> for VirtualCell {
@@ -1491,15 +1497,16 @@ impl<F: Field, C: Into<Constraint<F>>, Iter: IntoIterator<Item = C>> IntoIterato
 }
 
 /// Gate
+#[allow(missing_docs)]
 #[derive(Clone, Debug)]
 pub struct Gate<F: Field> {
-    name: String,
-    constraint_names: Vec<String>,
-    polys: Vec<Expression<F>>,
+    pub name: String,
+    pub constraint_names: Vec<String>,
+    pub polys: Vec<Expression<F>>,
     /// We track queried selectors separately from other cells, so that we can use them to
     /// trigger debug checks on gates.
-    queried_selectors: Vec<Selector>,
-    queried_cells: Vec<VirtualCell>,
+    pub queried_selectors: Vec<Selector>,
+    pub queried_cells: Vec<VirtualCell>,
 }
 
 impl<F: Field> Gate<F> {
@@ -1529,48 +1536,49 @@ impl<F: Field> Gate<F> {
 
 /// This is a description of the circuit environment, such as the gate, column and
 /// permutation arrangements.
+#[allow(missing_docs)]
 #[derive(Debug, Clone)]
 pub struct ConstraintSystem<F: Field> {
-    pub(crate) num_fixed_columns: usize,
-    pub(crate) num_advice_columns: usize,
-    pub(crate) num_instance_columns: usize,
-    pub(crate) num_selectors: usize,
-    pub(crate) num_challenges: usize,
+    pub num_fixed_columns: usize,
+    pub num_advice_columns: usize,
+    pub num_instance_columns: usize,
+    pub num_selectors: usize,
+    pub num_challenges: usize,
 
     /// Contains the phase for each advice column. Should have same length as num_advice_columns.
-    pub(crate) advice_column_phase: Vec<sealed::Phase>,
+    pub advice_column_phase: Vec<sealed::Phase>,
     /// Contains the phase for each challenge. Should have same length as num_challenges.
-    pub(crate) challenge_phase: Vec<sealed::Phase>,
+    pub challenge_phase: Vec<sealed::Phase>,
 
     /// This is a cached vector that maps virtual selectors to the concrete
     /// fixed column that they were compressed into. This is just used by dev
     /// tooling right now.
-    pub(crate) selector_map: Vec<Column<Fixed>>,
+    pub selector_map: Vec<Column<Fixed>>,
 
-    pub(crate) gates: Vec<Gate<F>>,
-    pub(crate) advice_queries: Vec<(Column<Advice>, Rotation)>,
+    pub gates: Vec<Gate<F>>,
+    pub advice_queries: Vec<(Column<Advice>, Rotation)>,
     // Contains an integer for each advice column
     // identifying how many distinct queries it has
     // so far; should be same length as num_advice_columns.
-    num_advice_queries: Vec<usize>,
-    pub(crate) instance_queries: Vec<(Column<Instance>, Rotation)>,
-    pub(crate) fixed_queries: Vec<(Column<Fixed>, Rotation)>,
+    pub num_advice_queries: Vec<usize>,
+    pub instance_queries: Vec<(Column<Instance>, Rotation)>,
+    pub fixed_queries: Vec<(Column<Fixed>, Rotation)>,
 
     // Permutation argument for performing equality constraints
-    pub(crate) permutation: permutation::Argument,
+    pub permutation: permutation::Argument,
 
     // Vector of lookup arguments, where each corresponds to a sequence of
     // input expressions and a sequence of table expressions involved in the lookup.
-    pub(crate) lookups: Vec<lookup::Argument<F>>,
+    pub lookups: Vec<lookup::Argument<F>>,
 
     // List of indexes of Fixed columns which are associated to a circuit-general Column tied to their annotation.
-    pub(crate) general_column_annotations: HashMap<metadata::Column, String>,
+    pub general_column_annotations: HashMap<metadata::Column, String>,
 
     // Vector of fixed columns, which can be used to store constant values
     // that are copied into advice columns.
-    pub(crate) constants: Vec<Column<Fixed>>,
+    pub constants: Vec<Column<Fixed>>,
 
-    pub(crate) minimum_degree: Option<usize>,
+    pub minimum_degree: Option<usize>,
 }
 
 /// Represents the minimal parameters that determine a `ConstraintSystem`.

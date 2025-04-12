@@ -5,11 +5,12 @@ use std::fmt::{self, Debug};
 pub(crate) mod prover;
 pub(crate) mod verifier;
 
+#[allow(missing_docs)]
 #[derive(Clone)]
 pub struct Argument<F: Field> {
-    pub(crate) name: String,
-    pub(crate) input_expressions: Vec<Expression<F>>,
-    pub(crate) table_expressions: Vec<Expression<F>>,
+    pub name: String,
+    pub input_expressions: Vec<Expression<F>>,
+    pub table_expressions: Vec<Expression<F>>,
 }
 
 impl<F: Field> Debug for Argument<F> {

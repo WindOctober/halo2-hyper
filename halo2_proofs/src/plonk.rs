@@ -25,7 +25,8 @@ mod circuit;
 mod error;
 mod evaluation;
 mod keygen;
-mod lookup;
+#[allow(missing_docs)]
+pub mod lookup;
 pub mod permutation;
 mod vanishing;
 
